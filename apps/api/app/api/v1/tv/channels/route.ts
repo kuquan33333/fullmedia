@@ -9,10 +9,14 @@ export async function GET(request: Request): Promise<Response> {
   const context = requestContext(request);
   try {
     const url = new URL(request.url);
+    const group = optional(url.searchParams.get('group'));
+    const search = optional(url.searchParams.get('search'));
+    const cursor = optional(url.searchParams.get('cursor'));
+
     const data = await tvService.channels({
-      ...(optional(url.searchParams.get('group')) ? { group: optional(url.searchParams.get('group')) } : {}),
-      ...(optional(url.searchParams.get('search')) ? { search: optional(url.searchParams.get('search')) } : {}),
-      ...(optional(url.searchParams.get('cursor')) ? { cursor: optional(url.searchParams.get('cursor')) } : {}),
+      ...(group ? { group } : {}),
+      ...(search ? { search } : {}),
+      ...(cursor ? { cursor } : {}),
       limit: boundedInteger(url.searchParams.get('limit'), 100, 1, 200),
     });
     return ok(data, { requestId: context.requestId });
