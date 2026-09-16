@@ -101,9 +101,11 @@ describe('movie provider adapters', () => {
     const episodes = await provider.episodes('demo-series', context);
     expect(episodes).toHaveLength(1);
     expect(episodes[0]?.episodeNumber).toBe(1);
+    const episodeRef = episodes[0]?.externalId;
+    expect(episodeRef).toBeTruthy();
 
     const playback = await provider.resolvePlayback(
-      { movieRef: 'demo-series', episodeRef: episodes[0]?.externalId },
+      episodeRef ? { movieRef: 'demo-series', episodeRef } : { movieRef: 'demo-series' },
       context,
     );
     expect(playback.primary.type).toBe('HLS');
