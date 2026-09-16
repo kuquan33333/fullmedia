@@ -71,19 +71,44 @@ Supabase chịu trách nhiệm Auth, PostgreSQL, RLS, user profile, history/watc
 - `docs/18_ACCEPTANCE_CHECKLIST.md`
 - `docs/19_ARCHITECTURE_DATA_FLOW.md` — sơ đồ kiến trúc tổng thể, Control Plane/Data Plane và data flow chi tiết cho Phim, TV, Bóng đá, YouTube, Auth, playback, cache và provider fallback.
 - `docs/20_DATABASE_ARCHITECTURE.md` — thiết kế PostgreSQL/Supabase production-ready: multi-schema, canonical entities, user data/RLS, Movies/TV/Football/YouTube, provider control-plane, health, ingestion, playback telemetry, indexes, migrations và ER/data flow.
-- `docs/21_DATABASE_MIGRATIONS.md` — mapping giữa thiết kế DB và 14 migration SQL thật, security model, verification gate và quy tắc migration tiếp theo.
+- `docs/21_DATABASE_MIGRATIONS.md` — mapping giữa thiết kế DB và migration SQL thật, security model, verification gate và quy tắc migration tiếp theo.
 - `docs/22_PROVIDER_ENGINE_CODE_SCAFFOLD.md` — code khung Interface / Abstract Class, Registry, Selector, Health Store và fallback orchestration cho Provider Engine.
 - `docs/23_PROVIDER_INFRASTRUCTURE_AND_MOVIE_ADAPTERS.md` — root monorepo, HTTP transport, Config Repository, DB Health Store và adapter thật OPhim/KKPhim.
+- `docs/24_API_BFF_BOOTSTRAP_AND_PROVIDER_TESTS.md` — Next.js API/BFF, PostgreSQL executor, bootstrap Provider Registry từ DB, route Movies, health probe và test fallback.
 
 ## Database migrations
 
-Schema executable nằm tại `supabase/migrations/` và hiện gồm 14 migration từ khởi tạo schema/extensions đến domain tables, Provider Engine control plane, user data, operations, triggers, RLS/grants, indexes và seed reference data.
+Schema executable nằm tại `supabase/migrations/` và hiện gồm **15 migration**, từ khởi tạo schema/extensions đến domain tables, Provider Engine control plane, user data, operations, triggers, RLS/grants, indexes, seed reference data và seed cấu hình provider thật OPhim/KKPhim.
 
 Xem `supabase/README.md` trước khi chạy local/staging. Production không được push trước khi migration reset và security/advisor checks pass.
 
 ## Provider Engine
 
 Code nằm tại `packages/providers/` và gồm contract riêng cho Movies, TV, Football Data, Football Stream và Video/YouTube; adapter không được tự fallback sang provider khác. Registry/health/selection/fallback do Provider Engine quản lý tập trung.
+
+## API/BFF
+
+`apps/api` là Next.js App Router API/BFF chạy Node.js runtime. API đọc cấu hình provider từ PostgreSQL, đăng ký OPhim/KKPhim, dùng DB-backed health store và chỉ trả canonical DTO cho client.
+
+Các route hiện có:
+
+- `GET /api/v1/health`
+- `GET /api/v1/movies`
+- `GET /api/v1/movies?q=...`
+- `GET /api/v1/movies/:ref`
+- `GET /api/v1/movies/:ref/episodes`
+- `POST /api/v1/movies/:ref/playback`
+- `POST /api/v1/internal/providers/health` — yêu cầu `FULLMEDIA_INTERNAL_TOKEN`
+
+## Lệnh kiểm tra
+
+```bash
+corepack enable
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm build:api
+```
 
 ## Definition of Done tổng quát
 
