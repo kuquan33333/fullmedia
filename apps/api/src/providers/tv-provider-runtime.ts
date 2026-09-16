@@ -84,6 +84,10 @@ function mergeTvConfig(
   const config = createIptvProviderConfig(runtime, sources);
   return {
     ...config,
+    identity: {
+      ...config.identity,
+      capabilities: runtime.identity.capabilities,
+    },
     sourceCacheTtlMs: positiveInteger(
       process.env.FULLMEDIA_TV_SOURCE_CACHE_TTL_MS,
       Math.max(30_000, runtime.cacheTtlSeconds * 1_000),
