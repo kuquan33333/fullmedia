@@ -4,7 +4,7 @@ Next.js App Router API/BFF for FULLMEDIA.
 
 ## Runtime
 
-- Next.js 16.3.x
+- Next.js 16.3.x.
 - Node.js runtime (not Edge) because provider bootstrap uses PostgreSQL connection pooling.
 - PostgreSQL access through `PostgresSqlExecutor` implementing the framework-neutral `SqlExecutor` port from `@fullmedia/providers`.
 
@@ -29,6 +29,7 @@ Registry config is cached in-process for `FULLMEDIA_PROVIDER_REGISTRY_TTL_MS` (d
 - `GET /api/v1/movies/:ref`
 - `GET /api/v1/movies/:ref/episodes`
 - `POST /api/v1/movies/:ref/playback`
+- `POST /api/v1/internal/providers/health` — requires `Authorization: Bearer <FULLMEDIA_INTERNAL_TOKEN>`.
 
 Playback request body:
 
@@ -47,9 +48,12 @@ From repository root:
 ```bash
 corepack enable
 pnpm install
-pnpm typecheck
-pnpm test
+pnpm verify
 pnpm dev:api
 ```
 
-Do not use `service_role`, database passwords, or provider secrets in any `NEXT_PUBLIC_*` variable.
+`pnpm verify` runs workspace typechecks, fixture tests, and a production API build.
+
+A manual-only GitHub Action also exists at `.github/workflows/manual-verify.yml`. It has only `workflow_dispatch`, so it does not run automatically on push.
+
+Do not use `service_role`, database passwords, internal tokens, or provider secrets in any `NEXT_PUBLIC_*` variable.
