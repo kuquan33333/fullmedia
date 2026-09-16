@@ -1,7 +1,7 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./packages/providers" },
-    { "path": "./apps/api" }
-  ]
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "files": []
 }
