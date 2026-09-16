@@ -18,11 +18,7 @@ export async function POST(request: Request, routeContext: RouteContext): Promis
   try {
     const { ref } = await routeContext.params;
     const body = await parseBody(request);
-    const data = await movieService.resolvePlayback(
-      decodeURIComponent(ref),
-      body.episodeRef,
-      context,
-    );
+    const data = await movieService.resolvePlayback(ref, body.episodeRef, context);
     return ok(data, { requestId: context.requestId });
   } catch (error) {
     return fail(error, context.requestId);
