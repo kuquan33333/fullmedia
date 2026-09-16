@@ -12,6 +12,7 @@ export interface TvSyncProviderResult {
   playbackBindingsSynced: number;
   epgChannelsSynced: number;
   errors: number;
+  status: 'SUCCESS' | 'PARTIAL' | 'FAILED' | 'SKIPPED';
 }
 
 export interface TvSyncResult {
@@ -35,10 +36,22 @@ export class TvIngestionService {
     const results: TvSyncProviderResult[] = [];
 
     for (const provider of providers) {
-      const result = await this.syncProvider(provider, epgClaimed);
-      results.push(result);
-      await runtime.sourceRepository.markProviderSynced(provider.identity.id);
-      await pruneProviderBindings(this.db, provider.identity.id, startedAt);
+      const healthContext = { requestId: `tv-health-${provider.identity.code}-${crypto.randomUUID()}` };
+      try {
+        const health = await provider.healthCheck(healthContext);
+        await runtime.healthStore.recordCheck(health);
+        if (health.status === 'DOWN' || health.status === 'DISABLED') {
+          results.push(failedProviderResult(provider, 'SKIPPED'));
+          continue;
+        }
+
+        const result = await this.syncProvider(provider, epgClaimed);
+        results.push(result);
+        await runtime.sourceRepository.markProviderSynced(provider.identity.id);
+        await pruneProviderBindings(this.db, provider.identity.id, startedAt);
+      } catch {
+        results.push(failedProviderResult(provider, 'FAILED'));
+      }
     }
 
     return { startedAt, finishedAt: new Date().toISOString(), providers: results };
@@ -56,6 +69,7 @@ export class TvIngestionService {
       playbackBindingsSynced: 0,
       epgChannelsSynced: 0,
       errors: 0,
+      status: 'SUCCESS',
     };
     const context = { requestId: `tv-sync-${provider.identity.code}-${crypto.randomUUID()}` };
     const channels = await allChannels(provider, context);
@@ -97,6 +111,8 @@ export class TvIngestionService {
       }
     });
 
+    if (result.channelsSeen > 0 && result.channelsSynced === 0) result.status = 'FAILED';
+    else if (result.errors > 0) result.status = 'PARTIAL';
     return result;
   }
 }
@@ -116,6 +132,22 @@ async function allChannels(
     if (guard > 100) throw new Error(`TV provider ${provider.identity.code} pagination exceeded safety limit`);
   } while (cursor);
   return output;
+}
+
+function failedProviderResult(
+  provider: TVProvider,
+  status: 'FAILED' | 'SKIPPED',
+): TvSyncProviderResult {
+  return {
+    providerId: provider.identity.id,
+    providerCode: provider.identity.code,
+    channelsSeen: 0,
+    channelsSynced: 0,
+    playbackBindingsSynced: 0,
+    epgChannelsSynced: 0,
+    errors: 1,
+    status,
+  };
 }
 
 async function mapLimit<T>(
