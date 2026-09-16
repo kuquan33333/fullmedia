@@ -1,13 +1,13 @@
 import {
   isMovieProvider,
+  type Episode,
   type MovieDetail,
   type MovieListQuery,
   type MovieProvider,
+  type MovieSummary,
   type PageQuery,
   type PageResult,
   type PlaybackDescriptor,
-  type Episode,
-  type MovieSummary,
   type ProviderRequestContext,
 } from '@fullmedia/providers';
 import { getProviderRuntime } from '../providers/provider-runtime';
@@ -42,25 +42,27 @@ export class MovieService {
   }
 
   async detail(movieRef: string, context: ProviderRequestContext): Promise<MovieDetail> {
+    const externalRef = crossProviderMovieRef(movieRef);
     const { engine } = await getProviderRuntime();
     const result = await engine.execute<MovieProvider, MovieDetail>({
       domain: 'MOVIES',
       capability: 'MOVIE_DETAIL',
       context,
       isProvider: isMovieProvider,
-      invoke: (provider, requestContext) => provider.detail(movieRef, requestContext),
+      invoke: (provider, requestContext) => provider.detail(externalRef, requestContext),
     });
     return result.data;
   }
 
   async episodes(movieRef: string, context: ProviderRequestContext): Promise<Episode[]> {
+    const externalRef = crossProviderMovieRef(movieRef);
     const { engine } = await getProviderRuntime();
     const result = await engine.execute<MovieProvider, Episode[]>({
       domain: 'MOVIES',
       capability: 'MOVIE_EPISODES',
       context,
       isProvider: isMovieProvider,
-      invoke: (provider, requestContext) => provider.episodes(movieRef, requestContext),
+      invoke: (provider, requestContext) => provider.episodes(externalRef, requestContext),
     });
     return result.data;
   }
@@ -70,6 +72,7 @@ export class MovieService {
     episodeRef: string | undefined,
     context: ProviderRequestContext,
   ): Promise<PlaybackDescriptor> {
+    const externalRef = crossProviderMovieRef(movieRef);
     const { engine } = await getProviderRuntime();
     const result = await engine.execute<MovieProvider, PlaybackDescriptor>({
       domain: 'MOVIES',
@@ -77,12 +80,21 @@ export class MovieService {
       context,
       isProvider: isMovieProvider,
       invoke: (provider, requestContext) => provider.resolvePlayback(
-        episodeRef ? { movieRef, episodeRef } : { movieRef },
+        episodeRef ? { movieRef: externalRef, episodeRef } : { movieRef: externalRef },
         requestContext,
       ),
     });
     return result.data;
   }
+}
+
+export function crossProviderMovieRef(movieRef: string): string {
+  const trimmed = movieRef.trim();
+  const separator = trimmed.indexOf(':');
+  if (separator <= 0) return trimmed;
+  const prefix = trimmed.slice(0, separator).toLowerCase();
+  if (prefix === 'ophim' || prefix === 'kkphim') return trimmed.slice(separator + 1);
+  return trimmed;
 }
 
 export const movieService = new MovieService();
