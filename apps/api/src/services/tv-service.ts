@@ -1,6 +1,7 @@
 import { ProviderError, type EpgProgramme, type PageResult, type PlaybackDescriptor, type TVChannel } from '@fullmedia/providers';
 import { TtlCache } from '../cache/ttl-cache';
 import { getDatabase } from '../infrastructure/database';
+import { ensureInitialTvCatalog } from '../tv/managed-tv-source-manager';
 import { TvCatalogRepository } from '../tv/tv-catalog-repository';
 
 const channelListCache = new TtlCache<string, PageResult<TVChannel>>({
@@ -25,6 +26,7 @@ export class TvService {
     cursor?: string;
     limit?: number;
   } = {}): Promise<PageResult<TVChannel>> {
+    await ensureInitialTvCatalog();
     const key = `channels:${stableKey(options)}`;
     return channelListCache.getOrLoad(
       key,
@@ -34,11 +36,12 @@ export class TvService {
   }
 
   async channel(channelId: string): Promise<TVChannel> {
+    await ensureInitialTvCatalog();
     return channelCache.getOrLoad(
       channelId,
       async () => {
         const channel = await this.repository.getChannel(channelId);
-        if (!channel) throw new ProviderError({ providerId: 'tv-catalog', code: 'NOT_FOUND', message: 'TV channel not found', retryable: false });
+        if (!channel) throw new ProviderError({ providerId: 'tv-catalog', code: 'NOT_FOUND', message: 'TV channel not found', retryable: false, statusCode: 404 });
         return channel;
       },
       cacheTtl('FULLMEDIA_TV_CHANNEL_CACHE_TTL_MS', 5 * 60_000),
@@ -65,6 +68,7 @@ export class TvService {
         code: 'SOURCE_UNAVAILABLE',
         message: 'No healthy TV stream source is available',
         retryable: true,
+        statusCode: 503,
       });
     }
     // Live playback candidates are intentionally not cached here.
@@ -78,10 +82,10 @@ function validateTimeRange(from: string, to: string): void {
   const fromMs = new Date(from).getTime();
   const toMs = new Date(to).getTime();
   if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || toMs <= fromMs) {
-    throw new ProviderError({ providerId: 'tv-catalog', code: 'INVALID_REQUEST', message: 'Invalid EPG time range', retryable: false });
+    throw new ProviderError({ providerId: 'tv-catalog', code: 'INVALID_REQUEST', message: 'Invalid EPG time range', retryable: false, statusCode: 400 });
   }
   if (toMs - fromMs > 7 * 24 * 60 * 60_000) {
-    throw new ProviderError({ providerId: 'tv-catalog', code: 'INVALID_REQUEST', message: 'EPG range cannot exceed 7 days', retryable: false });
+    throw new ProviderError({ providerId: 'tv-catalog', code: 'INVALID_REQUEST', message: 'EPG range cannot exceed 7 days', retryable: false, statusCode: 400 });
   }
 }
 
