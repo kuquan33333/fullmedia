@@ -75,6 +75,7 @@ Supabase chịu trách nhiệm Auth, PostgreSQL, RLS, user profile, history/watc
 - `docs/22_PROVIDER_ENGINE_CODE_SCAFFOLD.md` — code khung Interface / Abstract Class, Registry, Selector, Health Store và fallback orchestration cho Provider Engine.
 - `docs/23_PROVIDER_INFRASTRUCTURE_AND_MOVIE_ADAPTERS.md` — root monorepo, HTTP transport, Config Repository, DB Health Store và adapter thật OPhim/KKPhim.
 - `docs/24_API_BFF_BOOTSTRAP_AND_PROVIDER_TESTS.md` — Next.js API/BFF, PostgreSQL executor, bootstrap Provider Registry từ DB, route Movies, health probe và test fallback.
+- `docs/25_CANONICAL_MOVIE_RESOLVER_AND_CACHE.md` — canonical UUID cho Movies, discovery mapping khi provider dùng slug khác nhau, stable episode refs và TTL cache/in-flight dedup.
 
 ## Database migrations
 
@@ -89,6 +90,8 @@ Code nằm tại `packages/providers/` và gồm contract riêng cho Movies, TV,
 ## API/BFF
 
 `apps/api` là Next.js App Router API/BFF chạy Node.js runtime. API đọc cấu hình provider từ PostgreSQL, đăng ký OPhim/KKPhim, dùng DB-backed health store và chỉ trả canonical DTO cho client.
+
+Movies hiện dùng `catalog.entities` + `catalog.provider_refs` để trả **canonical UUID** thay vì provider slug. Nếu provider dự phòng chưa có mapping, BFF có thể tìm candidate theo title/type/year và ghi mapping mới vào `provider_refs`, nên OPhim và KKPhim không cần dùng cùng slug để fallback.
 
 Các route hiện có:
 
@@ -109,6 +112,8 @@ pnpm typecheck
 pnpm test
 pnpm build:api
 ```
+
+GitHub Actions `Manual Verify` chỉ có `workflow_dispatch`; không tự chạy khi push.
 
 ## Definition of Done tổng quát
 
