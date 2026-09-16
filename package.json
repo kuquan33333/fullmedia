@@ -7,10 +7,16 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "dev:api": "pnpm --filter @fullmedia/api dev",
+    "build:api": "pnpm --filter @fullmedia/api build",
     "typecheck": "tsc -b --pretty false",
-    "typecheck:providers": "tsc -p packages/providers/tsconfig.json --noEmit"
+    "typecheck:providers": "tsc -p packages/providers/tsconfig.json --noEmit",
+    "typecheck:api": "tsc -p apps/api/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:providers": "vitest run packages/providers"
   },
   "devDependencies": {
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "5.0.0"
   }
 }
