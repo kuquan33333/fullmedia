@@ -4,7 +4,7 @@ Tài liệu này liên kết thiết kế ở `20_DATABASE_ARCHITECTURE.md` vớ
 
 ## 1. Trạng thái
 
-Đã tạo 14 migration theo đúng thứ tự phụ thuộc từ schema nền đến RLS/index/seed. Đây là schema khởi tạo cho P0/P1 và là source of truth để dựng Supabase local/staging.
+Đã tạo 15 migration theo đúng thứ tự phụ thuộc từ schema nền đến RLS/index/seed/provider reference config. Đây là schema khởi tạo cho P0/P1 và là source of truth để dựng Supabase local/staging.
 
 ## 2. Migration map
 
@@ -24,6 +24,7 @@ Tài liệu này liên kết thiết kế ở `20_DATABASE_ARCHITECTURE.md` vớ
 | 12 | `rls_and_grants` | RLS, grants, user ownership policies, private schema lockdown |
 | 13 | `indexes_and_constraints` | search/performance/uniqueness/partial indexes |
 | 14 | `seed_reference_data` | safe default app config, feature flags và TV group reference data |
+| 15 | `seed_movie_providers` | cấu hình provider thật OPhim/KKPhim + capability; không chứa secret |
 
 ## 3. Canonical implementation decisions
 
@@ -36,6 +37,7 @@ Một số quyết định implementation được khóa rõ hơn tài liệu kh
 - Chỉ một `provider_configs.is_current = true` được phép cho mỗi provider qua partial unique index.
 - `control` và `ops` không có client policies; chỉ backend/service role truy cập.
 - `private.handle_new_user()` là `SECURITY DEFINER`, đặt trong schema không exposed, `search_path=''`, và execute bị revoke khỏi client roles.
+- OPhim/KKPhim được seed dưới dạng reference configuration thật để `apps/api` bootstrap trực tiếp từ DB sau migration reset.
 
 ## 4. Security model
 
