@@ -1,0 +1,16 @@
+{
+  "name": "fullmedia",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc -b --pretty false",
+    "typecheck:providers": "tsc -p packages/providers/tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}
