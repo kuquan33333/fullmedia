@@ -38,8 +38,8 @@ export class ProviderError extends Error {
     this.providerId = options.providerId;
     this.code = options.code;
     this.retryable = options.retryable;
-    this.statusCode = options.statusCode;
-    this.cause = options.cause;
+    if (options.statusCode !== undefined) this.statusCode = options.statusCode;
+    if (options.cause !== undefined) this.cause = options.cause;
   }
 }
 
