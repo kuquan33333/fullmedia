@@ -41,7 +41,7 @@ export async function getTvProviderRuntime(forceRefresh = false): Promise<TvProv
     globalState.fullmediaTvProviderRuntime = runtime;
     return runtime;
   } finally {
-    globalState.fullmediaTvProviderRuntimePromise = undefined;
+    delete globalState.fullmediaTvProviderRuntimePromise;
   }
 }
 
