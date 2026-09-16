@@ -35,7 +35,7 @@ packages/
   api-client/
   auth/
   database/
-  providers/     Provider Engine interfaces + abstract core
+  providers/     Provider Engine + infrastructure + concrete adapters
   playback/
   analytics/
   config/
@@ -47,6 +47,23 @@ docs/
 ```
 
 Supabase chịu trách nhiệm Auth, PostgreSQL, RLS, user profile, history/watchlist/favorites, provider configuration, admin data và audit log. Web người dùng và Admin deploy lên Vercel. Mobile build iOS/Android qua Expo/EAS hoặc native CI tương ứng.
+
+## Root workspace
+
+Repo dùng pnpm workspace + solution-style TypeScript config. Các file gốc đã có:
+
+- `package.json`
+- `pnpm-workspace.yaml`
+- `tsconfig.base.json`
+- `tsconfig.json`
+
+Lệnh kiểm tra hiện tại:
+
+```bash
+corepack enable
+pnpm install
+pnpm typecheck
+```
 
 ## Bộ tài liệu
 
@@ -73,6 +90,7 @@ Supabase chịu trách nhiệm Auth, PostgreSQL, RLS, user profile, history/watc
 - `docs/20_DATABASE_ARCHITECTURE.md` — thiết kế PostgreSQL/Supabase production-ready: multi-schema, canonical entities, user data/RLS, Movies/TV/Football/YouTube, provider control-plane, health, ingestion, playback telemetry, indexes, migrations và ER/data flow.
 - `docs/21_DATABASE_MIGRATIONS.md` — mapping giữa thiết kế DB và 14 migration SQL thật, security model, verification gate và quy tắc migration tiếp theo.
 - `docs/22_PROVIDER_ENGINE_CODE_SCAFFOLD.md` — code khung Interface / Abstract Class, Registry, Selector, Health Store và fallback orchestration cho Provider Engine.
+- `docs/23_PROVIDER_INFRASTRUCTURE_AND_MOVIE_ADAPTERS.md` — root workspace, HTTP transport, Config Repository, DB Health Store, OPhimProvider và KKPhimProvider.
 
 ## Database migrations
 
@@ -80,9 +98,16 @@ Schema executable nằm tại `supabase/migrations/` và hiện gồm 14 migrati
 
 Xem `supabase/README.md` trước khi chạy local/staging. Production không được push trước khi migration reset và security/advisor checks pass.
 
-## Provider Engine scaffold
+## Provider Engine
 
-Code khung nằm tại `packages/providers/` và gồm contract riêng cho Movies, TV, Football Data, Football Stream và Video/YouTube; adapter không được tự fallback sang provider khác. Registry/health/selection/fallback do Provider Engine quản lý tập trung.
+Code nằm tại `packages/providers/`. Engine có contract riêng cho Movies, TV, Football Data, Football Stream và Video/YouTube; adapter không được tự fallback sang provider khác. Registry/health/selection/fallback do Provider Engine quản lý tập trung.
+
+Infrastructure hiện có:
+
+- native Fetch transport với custom headers/User-Agent, timeout, AbortSignal và bounded retry;
+- Provider Config Repository đọc `control.providers`, `control.provider_configs`, `control.provider_capabilities` và hỗ trợ environment overlay;
+- PostgreSQL-backed Health Store dùng `ops.provider_health` và `ops.provider_health_events`;
+- OPhimProvider và KKPhimProvider thật, normalize list/search/detail/episodes/HLS/embed/subtitle metadata về `MovieProvider` contract.
 
 ## Definition of Done tổng quát
 
