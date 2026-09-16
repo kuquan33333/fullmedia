@@ -1,6 +1,7 @@
 import { isTVProvider, type TVProvider } from '@fullmedia/providers';
 import { getDatabase } from '../infrastructure/database';
 import { getTvProviderRuntime } from '../providers/tv-provider-runtime';
+import { pruneProviderBindings } from './tv-binding-maintenance';
 import { TvCatalogRepository } from './tv-catalog-repository';
 
 export interface TvSyncProviderResult {
@@ -20,7 +21,8 @@ export interface TvSyncResult {
 }
 
 export class TvIngestionService {
-  private readonly catalog = new TvCatalogRepository(getDatabase());
+  private readonly db = getDatabase();
+  private readonly catalog = new TvCatalogRepository(this.db);
 
   async syncAll(): Promise<TvSyncResult> {
     const startedAt = new Date().toISOString();
@@ -33,10 +35,10 @@ export class TvIngestionService {
     const results: TvSyncProviderResult[] = [];
 
     for (const provider of providers) {
-      const result = await this.syncProvider(provider, startedAt, epgClaimed);
+      const result = await this.syncProvider(provider, epgClaimed);
       results.push(result);
       await runtime.sourceRepository.markProviderSynced(provider.identity.id);
-      await this.catalog.pruneProviderBindings(provider.identity.id, startedAt);
+      await pruneProviderBindings(this.db, provider.identity.id, startedAt);
     }
 
     return { startedAt, finishedAt: new Date().toISOString(), providers: results };
@@ -44,7 +46,6 @@ export class TvIngestionService {
 
   private async syncProvider(
     provider: TVProvider,
-    syncStartedAt: string,
     epgClaimed: Set<string>,
   ): Promise<TvSyncProviderResult> {
     const result: TvSyncProviderResult = {
@@ -96,7 +97,6 @@ export class TvIngestionService {
       }
     });
 
-    await this.catalog.touchProviderRefs(provider.identity.id, syncStartedAt);
     return result;
   }
 }
