@@ -38,6 +38,8 @@ export interface TVChannel extends CanonicalRef {
   logoUrl?: string;
   group?: string;
   isHd?: boolean;
+  playable?: boolean;
+  sourceCount?: number;
 }
 
 export interface EpgProgramme extends CanonicalRef {
