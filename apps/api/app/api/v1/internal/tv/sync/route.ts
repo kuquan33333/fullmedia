@@ -1,6 +1,6 @@
-import { fail, ok } from '../../../../../../../src/http/api-response';
-import { requestContext } from '../../../../../../../src/http/request-context';
-import { tvIngestionService } from '../../../../../../../src/tv/tv-ingestion-service';
+import { fail, ok } from '../../../../../../src/http/api-response';
+import { requestContext } from '../../../../../../src/http/request-context';
+import { tvIngestionService } from '../../../../../../src/tv/tv-ingestion-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
