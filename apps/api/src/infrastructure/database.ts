@@ -14,7 +14,9 @@ export function getDatabase(): PostgresSqlExecutor {
     throw new Error('DATABASE_URL is required for FULLMEDIA API');
   }
 
-  const maxConnections = positiveInteger(process.env.FULLMEDIA_DB_POOL_MAX, 5);
+  // Supabase recommends one application-side connection per warm serverless instance
+  // when using the transaction pooler. Raise only after observing real queue pressure.
+  const maxConnections = positiveInteger(process.env.FULLMEDIA_DB_POOL_MAX, 1);
   globalState.fullmediaDb = PostgresSqlExecutor.fromOptions({
     connectionString,
     maxConnections,
