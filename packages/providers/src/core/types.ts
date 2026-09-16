@@ -82,6 +82,14 @@ export interface PageResult<T> {
 
 export type PlaybackType = 'HLS' | 'DASH' | 'MP4' | 'EMBED';
 
+export interface SubtitleTrack {
+  id: string;
+  url: string;
+  label?: string;
+  language?: string;
+  default?: boolean;
+}
+
 export interface PlaybackCandidate {
   id: string;
   providerId: string;
@@ -92,6 +100,7 @@ export interface PlaybackCandidate {
   expiresAt?: string;
   headers?: Readonly<Record<string, string>>;
   qualityLabel?: string;
+  subtitles?: readonly SubtitleTrack[];
   metadata?: Readonly<Record<string, unknown>>;
 }
 
@@ -105,6 +114,9 @@ export interface ProviderHealthSnapshot {
   status: ProviderHealthStatus;
   latencyMs?: number;
   lastCheckedAt?: string;
+  lastSuccessAt?: string;
+  lastFailureAt?: string;
+  consecutiveSuccesses?: number;
   consecutiveFailures?: number;
   circuitOpenUntil?: string;
 }
@@ -129,4 +141,15 @@ export interface ProviderExecutionResult<T> {
   providerCode: string;
   fallbackCount: number;
   attempts: ProviderAttempt[];
+}
+
+export const PROVIDER_CAPABILITIES: readonly ProviderCapability[] = [
+  'MOVIE_LIST', 'MOVIE_SEARCH', 'MOVIE_DETAIL', 'MOVIE_EPISODES', 'MOVIE_PLAYBACK',
+  'TV_CHANNELS', 'TV_EPG', 'TV_PLAYBACK',
+  'FOOTBALL_FIXTURES', 'FOOTBALL_MATCH', 'FOOTBALL_STANDINGS', 'FOOTBALL_PLAYBACK',
+  'VIDEO_HOME', 'VIDEO_SEARCH', 'VIDEO_DETAIL', 'VIDEO_CHANNEL', 'VIDEO_PLAYLIST', 'VIDEO_PLAYBACK',
+];
+
+export function isProviderCapability(value: string): value is ProviderCapability {
+  return (PROVIDER_CAPABILITIES as readonly string[]).includes(value);
 }
