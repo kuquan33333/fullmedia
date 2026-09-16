@@ -78,8 +78,9 @@ export class CanonicalMovieResolver {
 
   async canonicalizeDetail(detail: MovieDetail): Promise<MovieDetail> {
     const summary = await this.canonicalizeSummary(detail);
+    const { providerId: _providerId, externalId: _externalId, ...publicDetail } = detail;
     return {
-      ...detail,
+      ...publicDetail,
       id: summary.id,
       title: summary.title,
       ...(summary.originalTitle ? { originalTitle: summary.originalTitle } : {}),
@@ -90,9 +91,7 @@ export class CanonicalMovieResolver {
       ...(summary.status ? { status: summary.status } : {}),
       ...(summary.genres ? { genres: summary.genres } : {}),
       ...(summary.countries ? { countries: summary.countries } : {}),
-      providerId: undefined,
-      externalId: undefined,
-    } as MovieDetail;
+    };
   }
 
   async getCanonicalMovie(canonicalId: string): Promise<CanonicalMovieRecord | undefined> {
