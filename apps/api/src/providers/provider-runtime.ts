@@ -43,7 +43,7 @@ export async function getProviderRuntime(forceRefresh = false): Promise<Provider
     globalState.fullmediaProviderRuntime = runtime;
     return runtime;
   } finally {
-    globalState.fullmediaProviderRuntimePromise = undefined;
+    delete globalState.fullmediaProviderRuntimePromise;
   }
 }
 
@@ -106,18 +106,19 @@ function mergeMovieConfig(
   runtime: ProviderRuntimeConfig,
 ): MovieApiProviderConfig {
   const configuredImageBase = runtime.requestTemplate.imageBaseUrl;
-  return {
+  const result: MovieApiProviderConfig = {
     ...defaults,
     ...runtime,
     identity: runtime.identity,
-    baseUrl: runtime.baseUrl ?? defaults.baseUrl,
-    imageBaseUrl:
-      typeof configuredImageBase === 'string'
-        ? configuredImageBase
-        : defaults.imageBaseUrl,
     headers: runtime.headers,
     requestTemplate: runtime.requestTemplate,
   };
+
+  if (runtime.baseUrl) result.baseUrl = runtime.baseUrl;
+  if (typeof configuredImageBase === 'string' && configuredImageBase.trim()) {
+    result.imageBaseUrl = configuredImageBase.trim();
+  }
+  return result;
 }
 
 function positiveInteger(value: string | undefined, fallback: number): number {
