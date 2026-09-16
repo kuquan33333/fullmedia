@@ -2,14 +2,20 @@ export * from './core/types';
 export * from './core/errors';
 export * from './core/provider-adapter';
 export * from './core/base-provider';
-
 export * from './contracts/dtos';
 export * from './contracts/movie-provider';
 export * from './contracts/tv-provider';
 export * from './contracts/football-provider';
 export * from './contracts/video-provider';
-
 export * from './health/health-store';
+export * from './health/db-health-store';
 export * from './registry/provider-registry';
 export * from './engine/provider-selector';
 export * from './engine/provider-engine';
+export * from './infrastructure/http/http-transport';
+export * from './infrastructure/db/sql-executor';
+export * from './infrastructure/config/provider-config-repository';
+export * from './adapters/movies/shared';
+export * from './adapters/movies/movie-api-provider-base';
+export * from './adapters/movies/ophim-provider';
+export * from './adapters/movies/kkphim-provider';
