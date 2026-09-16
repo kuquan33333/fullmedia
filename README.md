@@ -75,7 +75,8 @@ Supabase chịu trách nhiệm Auth, PostgreSQL, RLS, user profile, history/watc
 - `docs/22_PROVIDER_ENGINE_CODE_SCAFFOLD.md` — code khung Interface / Abstract Class, Registry, Selector, Health Store và fallback orchestration cho Provider Engine.
 - `docs/23_PROVIDER_INFRASTRUCTURE_AND_MOVIE_ADAPTERS.md` — root monorepo, HTTP transport, Config Repository, DB Health Store và adapter thật OPhim/KKPhim.
 - `docs/24_API_BFF_BOOTSTRAP_AND_PROVIDER_TESTS.md` — Next.js API/BFF, PostgreSQL executor, bootstrap Provider Registry từ DB, route Movies, health probe và test fallback.
-- `docs/25_CANONICAL_MOVIE_RESOLVER_AND_CACHE.md` — canonical UUID cho Movies, discovery mapping khi provider dùng slug khác nhau, stable episode refs và TTL cache/in-flight dedup.
+- `docs/25_CANONICAL_MOVIE_RESOLVER_AND_CACHE.md` — **CLOSED / VERIFIED**; canonical UUID cho Movies, discovery mapping khi provider dùng slug khác nhau, stable episode refs và TTL cache/in-flight dedup.
+- `docs/26_TV_CHANNEL_CATALOG_AND_ADMIN_SOURCE_IMPORT.md` — catalog TV 100 kênh từ nguồn cung cấp, runtime M3U import, EPG source metadata, source priority, enable/disable và multi-source fallback mà không commit raw stream URL.
 
 ## Database migrations
 
@@ -87,13 +88,30 @@ Xem `supabase/README.md` trước khi chạy local/staging. Production không đ
 
 Code nằm tại `packages/providers/` và gồm contract riêng cho Movies, TV, Football Data, Football Stream và Video/YouTube; adapter không được tự fallback sang provider khác. Registry/health/selection/fallback do Provider Engine quản lý tập trung.
 
+## Movies
+
+Movies dùng `catalog.entities` + `catalog.provider_refs` để trả **canonical UUID** thay vì provider slug. Nếu provider dự phòng chưa có mapping, BFF có thể tìm candidate theo title/type/year và ghi mapping mới vào `provider_refs`, nên OPhim và KKPhim không cần dùng cùng slug để fallback.
+
+## TV sources
+
+TV dùng canonical channel UUID trong `catalog.tv_channels`; stream source nằm riêng trong private `control.playback_bindings`.
+
+Initial catalog hiện giữ đủ metadata **100 kênh** từ playlist nguồn đã cung cấp. Stream URL không được hardcode vào UI hay commit công khai. Admin import M3U sẽ tạo một Provider riêng cho mỗi `sourceKey`, ví dụ:
+
+```text
+luan9x    → IPTV_LUAN9X_<HASH>
+backup-01 → IPTV_BACKUP_01_<HASH>
+```
+
+Re-import cùng `sourceKey` chỉ replace bindings của source đó. Source khác vẫn tồn tại làm fallback. Admin có thể bật/tắt hoặc đổi priority mà client không đổi channel ID và không cần build lại app.
+
+Canonical `TVChannel` có `playable` và `sourceCount` để client biết kênh nào hiện có nguồn phát.
+
 ## API/BFF
 
-`apps/api` là Next.js App Router API/BFF chạy Node.js runtime. API đọc cấu hình provider từ PostgreSQL, đăng ký OPhim/KKPhim, dùng DB-backed health store và chỉ trả canonical DTO cho client.
+`apps/api` là Next.js App Router API/BFF chạy Node.js runtime. API đọc cấu hình provider từ PostgreSQL, dùng private Control Plane và chỉ trả canonical DTO cho client.
 
-Movies hiện dùng `catalog.entities` + `catalog.provider_refs` để trả **canonical UUID** thay vì provider slug. Nếu provider dự phòng chưa có mapping, BFF có thể tìm candidate theo title/type/year và ghi mapping mới vào `provider_refs`, nên OPhim và KKPhim không cần dùng cùng slug để fallback.
-
-Các route hiện có:
+Các route chính hiện có:
 
 - `GET /api/v1/health`
 - `GET /api/v1/movies`
@@ -101,7 +119,14 @@ Các route hiện có:
 - `GET /api/v1/movies/:ref`
 - `GET /api/v1/movies/:ref/episodes`
 - `POST /api/v1/movies/:ref/playback`
+- `GET /api/v1/tv/channels`
+- `GET /api/v1/tv/channels/:id`
+- `GET /api/v1/tv/channels/:id/epg`
+- `POST /api/v1/tv/channels/:id/playback`
 - `POST /api/v1/internal/providers/health` — yêu cầu `FULLMEDIA_INTERNAL_TOKEN`
+- `GET /api/v1/internal/admin/tv/sources` — danh sách source TV, không trả raw stream URLs
+- `POST /api/v1/internal/admin/tv/sources/import` — upload/import/replace M3U
+- `PATCH /api/v1/internal/admin/tv/sources/:sourceKey` — enable/disable hoặc đổi priority
 
 ## Lệnh kiểm tra
 
