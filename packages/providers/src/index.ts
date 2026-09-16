@@ -19,3 +19,6 @@ export * from './adapters/movies/shared';
 export * from './adapters/movies/movie-api-provider-base';
 export * from './adapters/movies/ophim-provider';
 export * from './adapters/movies/kkphim-provider';
+export * from './adapters/tv/m3u-parser';
+export * from './adapters/tv/xmltv-parser';
+export * from './adapters/tv/iptv-provider';
