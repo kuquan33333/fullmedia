@@ -48,7 +48,11 @@ export function parseM3u(input: string): M3uParseResult {
 
     if (line.startsWith('#EXTINF:')) {
       const { metadata, name } = splitExtInf(line.slice('#EXTINF:'.length));
-      pending = { name, attributes: parseAttributes(metadata), headers: {} };
+      pending = {
+        ...(name ? { name } : {}),
+        attributes: parseAttributes(metadata),
+        headers: {},
+      };
       continue;
     }
 
