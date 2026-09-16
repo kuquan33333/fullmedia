@@ -1,6 +1,7 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/providers" }
+    { "path": "./packages/providers" },
+    { "path": "./apps/api" }
   ]
 }
