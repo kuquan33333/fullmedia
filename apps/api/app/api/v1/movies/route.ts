@@ -10,7 +10,7 @@ export async function GET(request: Request): Promise<Response> {
   const context = requestContext(request);
   try {
     const url = new URL(request.url);
-    const search = url.searchParams.get('q')?.trim();
+    const search = optional(url.searchParams.get('q'));
     const cursor = optional(url.searchParams.get('cursor'));
     const limit = boundedInteger(url.searchParams.get('limit'), 24, 1, 50);
 
@@ -21,13 +21,15 @@ export async function GET(request: Request): Promise<Response> {
 
     const type = movieType(url.searchParams.get('type'));
     const year = optionalInteger(url.searchParams.get('year'));
+    const genre = optional(url.searchParams.get('genre'));
+    const country = optional(url.searchParams.get('country'));
     const data = await movieService.list({
       ...(cursor ? { cursor } : {}),
       limit,
       ...(type ? { type } : {}),
-      ...(year ? { year } : {}),
-      ...(optional(url.searchParams.get('genre')) ? { genre: optional(url.searchParams.get('genre')) } : {}),
-      ...(optional(url.searchParams.get('country')) ? { country: optional(url.searchParams.get('country')) } : {}),
+      ...(year !== undefined ? { year } : {}),
+      ...(genre ? { genre } : {}),
+      ...(country ? { country } : {}),
     }, context);
     return ok(data, { requestId: context.requestId });
   } catch (error) {
