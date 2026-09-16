@@ -60,56 +60,49 @@ async function parseImportBody(request: Request): Promise<ImportBody> {
     const playlistText = fileValue instanceof File
       ? await fileValue.text()
       : stringValue(fileValue);
-    return validateBody(composeBody(
+    const publish = optionalBoolean(form.get('publish'));
+    const refreshIntervalMinutes = optionalNumber(form.get('refreshIntervalMinutes'));
+    const basePriority = optionalNumber(form.get('basePriority'));
+    return validateBody({
       sourceKey,
       playlistText,
-      optionalBoolean(form.get('publish')),
-      optionalNumber(form.get('refreshIntervalMinutes')),
-      optionalNumber(form.get('basePriority')),
-    ));
+      ...(publish !== undefined ? { publish } : {}),
+      ...(refreshIntervalMinutes !== undefined ? { refreshIntervalMinutes } : {}),
+      ...(basePriority !== undefined ? { basePriority } : {}),
+    });
   }
 
   if (contentType.includes('application/json')) {
     const value: unknown = await request.json();
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw invalid('JSON body must be an object');
     const body = value as Record<string, unknown>;
-    return validateBody(composeBody(
-      typeof body.sourceKey === 'string' ? body.sourceKey : '',
-      typeof body.playlistText === 'string' ? body.playlistText : '',
-      typeof body.publish === 'boolean' ? body.publish : undefined,
-      numberValue(body.refreshIntervalMinutes),
-      numberValue(body.basePriority),
-    ));
+    const publish = typeof body.publish === 'boolean' ? body.publish : undefined;
+    const refreshIntervalMinutes = numberValue(body.refreshIntervalMinutes);
+    const basePriority = numberValue(body.basePriority);
+    return validateBody({
+      sourceKey: typeof body.sourceKey === 'string' ? body.sourceKey : '',
+      playlistText: typeof body.playlistText === 'string' ? body.playlistText : '',
+      ...(publish !== undefined ? { publish } : {}),
+      ...(refreshIntervalMinutes !== undefined ? { refreshIntervalMinutes } : {}),
+      ...(basePriority !== undefined ? { basePriority } : {}),
+    });
   }
 
   if (contentType.includes('text/plain') || contentType.includes('application/x-mpegurl') || contentType.includes('application/vnd.apple.mpegurl')) {
     const url = new URL(request.url);
-    return validateBody(composeBody(
-      url.searchParams.get('sourceKey') ?? '',
-      await request.text(),
-      optionalBoolean(url.searchParams.get('publish')),
-      optionalNumber(url.searchParams.get('refreshIntervalMinutes')),
-      optionalNumber(url.searchParams.get('basePriority')),
-    ));
+    const publish = optionalBoolean(url.searchParams.get('publish'));
+    const refreshIntervalMinutes = optionalNumber(url.searchParams.get('refreshIntervalMinutes'));
+    const basePriority = optionalNumber(url.searchParams.get('basePriority'));
+    return validateBody({
+      sourceKey: url.searchParams.get('sourceKey') ?? '',
+      playlistText: await request.text(),
+      ...(publish !== undefined ? { publish } : {}),
+      ...(refreshIntervalMinutes !== undefined ? { refreshIntervalMinutes } : {}),
+      ...(basePriority !== undefined ? { basePriority } : {}),
+    });
   }
 
   throw invalid('Use multipart/form-data, application/json, text/plain or an M3U content type');
-}
-
-function composeBody(
-  sourceKey: string,
-  playlistText: string,
-  publish: boolean | undefined,
-  refreshIntervalMinutes: number | undefined,
-  basePriority: number | undefined,
-): ImportBody {
-  return {
-    sourceKey,
-    playlistText,
-    ...(publish !== undefined ? { publish } : {}),
-    ...(refreshIntervalMinutes !== undefined ? { refreshIntervalMinutes } : {}),
-    ...(basePriority !== undefined ? { basePriority } : {}),
-  };
 }
 
 function validateBody(value: ImportBody): ImportBody {
