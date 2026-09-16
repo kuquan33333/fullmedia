@@ -1,6 +1,6 @@
-import { fail, ok } from '../../../../../../../src/http/api-response';
-import { requestContext } from '../../../../../../../src/http/request-context';
-import { getProviderRuntime, refreshProviderHealth } from '../../../../../../../src/providers/provider-runtime';
+import { fail, ok } from '../../../../../../src/http/api-response';
+import { requestContext } from '../../../../../../src/http/request-context';
+import { getProviderRuntime, refreshProviderHealth } from '../../../../../../src/providers/provider-runtime';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
