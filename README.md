@@ -74,7 +74,6 @@ Supabase chịu trách nhiệm Auth, PostgreSQL, RLS, user profile, history/watc
 - `docs/21_DATABASE_MIGRATIONS.md` — mapping giữa thiết kế DB và 14 migration SQL thật, security model, verification gate và quy tắc migration tiếp theo.
 - `docs/22_PROVIDER_ENGINE_CODE_SCAFFOLD.md` — code khung Interface / Abstract Class, Registry, Selector, Health Store và fallback orchestration cho Provider Engine.
 - `docs/23_PROVIDER_INFRASTRUCTURE_AND_MOVIE_ADAPTERS.md` — root monorepo, HTTP transport, Config Repository, DB Health Store và adapter thật OPhim/KKPhim.
-- `docs/24_API_BFF_BOOTSTRAP_AND_PROVIDER_TESTS.md` — `apps/api`, PostgreSQL executor, provider bootstrap và test end-to-end cho provider pipeline.
 
 ## Database migrations
 
@@ -85,10 +84,6 @@ Xem `supabase/README.md` trước khi chạy local/staging. Production không đ
 ## Provider Engine
 
 Code nằm tại `packages/providers/` và gồm contract riêng cho Movies, TV, Football Data, Football Stream và Video/YouTube; adapter không được tự fallback sang provider khác. Registry/health/selection/fallback do Provider Engine quản lý tập trung.
-
-## API/BFF
-
-`apps/api` là Next.js App Router API/BFF. Runtime mặc định là Node.js để dùng connection pool PostgreSQL. API bootstrap provider từ `control.providers` + `control.provider_configs`, tạo OPhim/KKPhim adapters, dùng DB-backed health store và chỉ trả canonical DTO cho client.
 
 ## Definition of Done tổng quát
 
