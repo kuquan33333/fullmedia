@@ -15,6 +15,7 @@ interface ChannelRow extends SqlRow {
   logo_url: string | null;
   group_name: string | null;
   is_hd: boolean;
+  source_count: number | string;
 }
 
 interface ProviderRefRow extends SqlRow {
@@ -238,8 +239,28 @@ export class TvCatalogRepository {
     const offsetParam = `$${params.length}`;
 
     const rows = await this.db.query<ChannelRow & { total_count: number | string }>(`
-      select c.id, c.name, c.short_name, c.logo_url, g.name as group_name, c.is_hd,
-             count(*) over() as total_count
+      select
+        c.id,
+        c.name,
+        c.short_name,
+        c.logo_url,
+        g.name as group_name,
+        c.is_hd,
+        (
+          select count(*)::int
+          from control.playback_bindings b
+          join control.providers p on p.id = b.provider_id and p.enabled = true
+          left join ops.provider_health h on h.provider_id = p.id
+          where b.entity_id = c.id
+            and b.binding_type = 'IPTV_STREAM'
+            and b.enabled = true
+            and b.source_ref is not null
+            and (b.starts_at is null or b.starts_at <= now())
+            and (b.expires_at is null or b.expires_at > now())
+            and coalesce(h.health_status, 'UNKNOWN') not in ('DOWN', 'DISABLED')
+            and (h.circuit_open_until is null or h.circuit_open_until <= now())
+        ) as source_count,
+        count(*) over() as total_count
       from catalog.tv_channels c
       join catalog.entities e on e.id = c.id
       left join catalog.tv_channel_groups g on g.id = c.group_id
@@ -257,7 +278,27 @@ export class TvCatalogRepository {
 
   async getChannel(entityId: string): Promise<TVChannel | undefined> {
     const row = (await this.db.query<ChannelRow>(`
-      select c.id, c.name, c.short_name, c.logo_url, g.name as group_name, c.is_hd
+      select
+        c.id,
+        c.name,
+        c.short_name,
+        c.logo_url,
+        g.name as group_name,
+        c.is_hd,
+        (
+          select count(*)::int
+          from control.playback_bindings b
+          join control.providers p on p.id = b.provider_id and p.enabled = true
+          left join ops.provider_health h on h.provider_id = p.id
+          where b.entity_id = c.id
+            and b.binding_type = 'IPTV_STREAM'
+            and b.enabled = true
+            and b.source_ref is not null
+            and (b.starts_at is null or b.starts_at <= now())
+            and (b.expires_at is null or b.expires_at > now())
+            and coalesce(h.health_status, 'UNKNOWN') not in ('DOWN', 'DISABLED')
+            and (h.circuit_open_until is null or h.circuit_open_until <= now())
+        ) as source_count
       from catalog.tv_channels c
       join catalog.entities e on e.id = c.id and e.is_active = true
       left join catalog.tv_channel_groups g on g.id = c.group_id
@@ -334,7 +375,14 @@ async function ensureGroup(db: SqlExecutor, name: string): Promise<string> {
 }
 
 function mapChannelRow(row: ChannelRow): TVChannel {
-  const channel: TVChannel = { id: row.id, name: row.name, isHd: row.is_hd };
+  const sourceCount = Number(row.source_count ?? 0);
+  const channel: TVChannel = {
+    id: row.id,
+    name: row.name,
+    isHd: row.is_hd,
+    playable: sourceCount > 0,
+    sourceCount,
+  };
   if (row.short_name) channel.shortName = row.short_name;
   if (row.logo_url) channel.logoUrl = row.logo_url;
   if (row.group_name) channel.group = row.group_name;
@@ -363,7 +411,16 @@ export function normalizeChannelKey(value: string): string {
     .replace(/\b(?:hd|fhd|uhd|4k)\b/g, ' ')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  return normalized || 'channel';
+  return normalized || `channel-${stableHash(value)}`;
+}
+
+function stableHash(value: string): string {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
 }
 
 function stringMetadata(candidate: PlaybackCandidate, key: string): string | undefined {
