@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
     "noEmit": true,
     "jsx": "react-jsx",
     "types": ["node"],
@@ -12,8 +11,5 @@
     "app/**/*.ts",
     "src/**/*.ts"
   ],
-  "exclude": ["node_modules", ".next"],
-  "references": [
-    { "path": "../../packages/providers" }
-  ]
+  "exclude": ["node_modules", ".next"]
 }
