@@ -48,6 +48,7 @@ export function fail(error: unknown, requestId: string): Response {
 }
 
 function providerStatus(error: ProviderError): number {
+  if (error.code === 'INVALID_REQUEST') return 400;
   if (error.code === 'NOT_FOUND') return 404;
   if (error.code === 'RATE_LIMITED') return 503;
   if (error.code === 'TIMEOUT') return 504;
@@ -57,6 +58,7 @@ function providerStatus(error: ProviderError): number {
 }
 
 function publicProviderMessage(error: ProviderError): string {
+  if (error.code === 'INVALID_REQUEST') return 'Invalid request';
   if (error.code === 'NOT_FOUND') return 'Content was not found';
   if (error.retryable) return 'Content provider is temporarily unavailable';
   return 'Content provider request failed';
