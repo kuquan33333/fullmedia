@@ -45,7 +45,7 @@ on conflict (provider_id, config_version) do update set
   updated_at = now();
 
 insert into control.provider_capabilities (provider_id, capability, enabled)
-select p.id, capability, true
+select p.id, capabilities.capability, true
 from control.providers p
 cross join unnest(array[
   'MOVIE_LIST',
@@ -53,6 +53,6 @@ cross join unnest(array[
   'MOVIE_DETAIL',
   'MOVIE_EPISODES',
   'MOVIE_PLAYBACK'
-]::text[]) as capability
+]::text[]) as capabilities(capability)
 where p.code in ('OPHIM', 'KKPHIM')
 on conflict (provider_id, capability) do update set enabled = true;
