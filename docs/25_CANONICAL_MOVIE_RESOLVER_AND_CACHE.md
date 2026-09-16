@@ -2,7 +2,9 @@
 
 ## Status
 
-Implemented in `apps/api` after the API/BFF + OPhim/KKPhim milestone passed Manual Verify.
+**CLOSED / VERIFIED — Manual Verify passed.**
+
+Implemented in `apps/api` after the API/BFF + OPhim/KKPhim milestone. The user confirmed the Manual Verify workflow passed before work moved to TV Provider Infrastructure.
 
 No new database migration was required. The implementation uses the existing canonical tables:
 
@@ -141,7 +143,7 @@ Legacy provider-prefixed refs such as `ophim:<slug>` and `kkphim:<slug>` are sti
 
 ## Verification
 
-Manual Verify remains the required gate:
+The milestone passed the manual verification gate:
 
 ```text
 pnpm install
@@ -152,11 +154,10 @@ pnpm build:api
 
 The workflow remains `workflow_dispatch` only and does not run automatically on push.
 
-## Next step
+## Follow-on work
 
-After this milestone passes Manual Verify:
+The project has now moved into TV Provider Infrastructure. Remaining movie-side enhancements stay on the roadmap:
 
-1. add canonical detail persistence/update from upstream detail responses;
-2. add background/provider ingestion for hot catalog items;
-3. add persistent episode/provider mapping for special numbering cases;
-4. begin TV provider infrastructure (M3U + XMLTV) while reusing Provider Engine, health and cache patterns.
+1. canonical detail persistence/update from upstream detail responses;
+2. background/provider ingestion for hot catalog items;
+3. persistent episode/provider mapping for special numbering cases.
