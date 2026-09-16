@@ -23,7 +23,7 @@ export class PostgresSqlExecutor implements SqlExecutor {
 
   async query<T extends SqlRow = SqlRow>(sql: string, params: readonly SqlPrimitive[] = []): Promise<T[]> {
     const result = await this.pool.query<QueryResultRow>(sql, [...params]);
-    return result.rows as T[];
+    return result.rows as unknown as T[];
   }
 
   async transaction<T>(work: (tx: SqlExecutor) => Promise<T>): Promise<T> {
@@ -51,7 +51,7 @@ class PostgresClientExecutor implements SqlExecutor {
 
   async query<T extends SqlRow = SqlRow>(sql: string, params: readonly SqlPrimitive[] = []): Promise<T[]> {
     const result = await this.client.query<QueryResultRow>(sql, [...params]);
-    return result.rows as T[];
+    return result.rows as unknown as T[];
   }
 
   async transaction<T>(work: (tx: SqlExecutor) => Promise<T>): Promise<T> {
