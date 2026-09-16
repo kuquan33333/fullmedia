@@ -4,7 +4,7 @@ import { fail, ok } from '../../../../../../../../src/http/api-response';
 import { isInternalRequestAuthorized, unauthorizedInternalResponse } from '../../../../../../../../src/http/internal-auth';
 import { requestContext } from '../../../../../../../../src/http/request-context';
 import { getDatabase } from '../../../../../../../../src/infrastructure/database';
-import { setManagedTvSourceEnabled } from '../../../../../../../../src/tv/managed-tv-source-manager';
+import { updateManagedTvSource, type ManagedTvSourceUpdate } from '../../../../../../../../src/tv/managed-tv-source-manager';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,33 +21,43 @@ export async function PATCH(request: Request, routeContext: RouteContext): Promi
 
   try {
     const { sourceKey } = await routeContext.params;
-    const enabled = await readEnabled(request);
-    await setManagedTvSourceEnabled(sourceKey, enabled);
+    const update = await readUpdate(request);
+    const result = await updateManagedTvSource(sourceKey, update);
 
     await writeAdminAudit(getDatabase(), {
-      action: enabled ? 'TV_SOURCE_ENABLE' : 'TV_SOURCE_DISABLE',
+      action: 'TV_SOURCE_UPDATE',
       resourceType: 'IPTV_SOURCE',
       resourceId: sourceKey,
-      after: { enabled },
+      after: result,
       requestId: context.requestId,
       request,
     });
 
-    return ok({ sourceKey, enabled }, { requestId: context.requestId });
+    return ok(result, { requestId: context.requestId });
   } catch (error) {
     return fail(error, context.requestId);
   }
 }
 
-async function readEnabled(request: Request): Promise<boolean> {
+async function readUpdate(request: Request): Promise<ManagedTvSourceUpdate> {
   if (!request.headers.get('content-type')?.toLowerCase().includes('application/json')) {
     throw invalid('Content-Type application/json is required');
   }
   const value: unknown = await request.json();
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw invalid('JSON body must be an object');
-  const enabled = (value as Record<string, unknown>).enabled;
-  if (typeof enabled !== 'boolean') throw invalid('enabled must be boolean');
-  return enabled;
+  const body = value as Record<string, unknown>;
+
+  const enabled = typeof body.enabled === 'boolean' ? body.enabled : undefined;
+  const priority = typeof body.priority === 'number' && Number.isFinite(body.priority)
+    ? body.priority
+    : undefined;
+  if (enabled === undefined && priority === undefined) {
+    throw invalid('At least one of enabled or priority is required');
+  }
+  return {
+    ...(enabled !== undefined ? { enabled } : {}),
+    ...(priority !== undefined ? { priority } : {}),
+  };
 }
 
 function invalid(message: string): ProviderError {
