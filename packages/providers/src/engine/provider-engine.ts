@@ -36,7 +36,7 @@ export class ProviderEngine {
       })
       .filter(options.isProvider);
 
-    const selected = await this.selector.select(candidates);
+    const selected = (await this.selector.select(candidates)).filter(options.isProvider);
     const limited = selected.slice(0, Math.max(1, options.maxProviders ?? selected.length));
     const attempts: ProviderAttempt[] = [];
     let lastError: ProviderError | undefined;
