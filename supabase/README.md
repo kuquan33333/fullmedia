@@ -20,6 +20,9 @@ Các file trong `supabase/migrations/` phải chạy theo timestamp tăng dần:
 12. `20260916173012_rls_and_grants.sql`
 13. `20260916173013_indexes_and_constraints.sql`
 14. `20260916173014_seed_reference_data.sql`
+15. `20260916181215_seed_movie_providers.sql`
+
+Migration 15 chỉ seed cấu hình nguồn thật OPhim/KKPhim và capabilities để Provider Engine có thể bootstrap từ DB; không seed nội dung phim giả và không chứa secret.
 
 ## Local verification
 
