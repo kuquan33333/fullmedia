@@ -43,15 +43,21 @@ export class InMemoryProviderHealthStore implements ProviderHealthStore {
   }
 
   async recordCheck(result: ProviderHealthCheckResult): Promise<void> {
+    const previous = await this.get(result.providerId);
+    const healthy = result.status === 'HEALTHY';
+    const failed = result.status === 'DOWN' || result.status === 'DEGRADED';
+    const consecutiveSuccesses = healthy ? (previous?.consecutiveSuccesses ?? 0) + 1 : failed ? 0 : previous?.consecutiveSuccesses ?? 0;
+    const consecutiveFailures = failed ? (previous?.consecutiveFailures ?? 0) + 1 : healthy ? 0 : previous?.consecutiveFailures ?? 0;
+
     await this.set({
       providerId: result.providerId,
       status: result.status,
       ...(result.latencyMs !== undefined ? { latencyMs: result.latencyMs } : {}),
       lastCheckedAt: result.checkedAt,
-      ...(result.lastSuccessAt ? { lastSuccessAt: result.lastSuccessAt } : {}),
-      ...(result.lastFailureAt ? { lastFailureAt: result.lastFailureAt } : {}),
-      ...(result.consecutiveSuccesses !== undefined ? { consecutiveSuccesses: result.consecutiveSuccesses } : {}),
-      ...(result.consecutiveFailures !== undefined ? { consecutiveFailures: result.consecutiveFailures } : {}),
+      ...(healthy ? { lastSuccessAt: result.checkedAt } : previous?.lastSuccessAt ? { lastSuccessAt: previous.lastSuccessAt } : {}),
+      ...(failed ? { lastFailureAt: result.checkedAt } : previous?.lastFailureAt ? { lastFailureAt: previous.lastFailureAt } : {}),
+      consecutiveSuccesses,
+      consecutiveFailures,
       ...(result.circuitOpenUntil ? { circuitOpenUntil: result.circuitOpenUntil } : {}),
     });
     await this.record({
