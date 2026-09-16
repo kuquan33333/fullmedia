@@ -2,12 +2,14 @@
 
 ## 1. Status
 
+**CLOSED / VERIFIED.** The owner ran the manual GitHub Actions verification on 2026-09-16 and reported PASS for the milestone before canonicalization work continued.
+
 This milestone wires the existing Provider Engine into a real Next.js API/BFF application at `apps/api`.
 
-Implemented:
+Implemented and verified at milestone close:
 
 - Next.js 16.3.x App Router API-only application.
-- Node.js runtime for PostgreSQL connection pooling.
+- Node.js runtime for PostgreSQL access.
 - `PostgresSqlExecutor` implementing the framework-neutral `SqlExecutor` port.
 - Database-backed Provider bootstrap from `control.providers`, `control.provider_configs`, and `control.provider_capabilities`.
 - OPhim + KKPhim registration.
@@ -17,6 +19,7 @@ Implemented:
 - Protected internal provider health probe route.
 - Fixture tests for OPhim/KKPhim normalization and Provider Engine fallback.
 - Reference migration seeding real OPhim/KKPhim provider configuration.
+- Manual-only verification workflow (`workflow_dispatch`).
 
 No movie mock data is added to production paths.
 
@@ -65,7 +68,7 @@ Admin/provider configuration remains server-side. Client applications do not rec
 
 ---
 
-## 3. `apps/api` structure
+## 3. `apps/api` structure at milestone close
 
 ```text
 apps/api/
@@ -88,12 +91,13 @@ apps/api/
       provider-runtime.ts
     services/
       movie-service.ts
-      movie-service.test.ts
   .env.example
   next.config.ts
   package.json
   tsconfig.json
 ```
+
+Canonical catalog/cache additions implemented after this milestone are documented in `25_CANONICAL_MOVIE_RESOLVER_AND_CACHE.md`.
 
 ---
 
@@ -110,7 +114,7 @@ Responsibilities:
 
 `DATABASE_URL` must remain server-only.
 
-On Vercel/Supabase, prefer the appropriate Supabase pooler connection string rather than creating a very large direct connection pool from every serverless instance.
+For Vercel/Supabase, use the appropriate Supabase pooler connection string rather than creating a large direct connection pool from every serverless instance.
 
 ---
 
@@ -170,58 +174,13 @@ No secret is committed to source control.
 
 ## 7. Public Movie API
 
-### Health
-
 ```http
 GET /api/v1/health
-```
-
-### List
-
-```http
 GET /api/v1/movies
-```
-
-Supported query fields:
-
-- `cursor`
-- `limit`
-- `type`
-- `year`
-- `genre`
-- `country`
-
-### Search
-
-```http
 GET /api/v1/movies?q=keyword
-```
-
-### Detail
-
-```http
 GET /api/v1/movies/:ref
-```
-
-### Episodes
-
-```http
 GET /api/v1/movies/:ref/episodes
-```
-
-### Resolve playback
-
-```http
 POST /api/v1/movies/:ref/playback
-Content-Type: application/json
-```
-
-Body:
-
-```json
-{
-  "episodeRef": "optional episode reference"
-}
 ```
 
 The BFF returns canonical playback descriptors. Media bytes still flow source/CDN → player, not source → Vercel → player.
@@ -235,66 +194,30 @@ POST /api/v1/internal/providers/health
 Authorization: Bearer <FULLMEDIA_INTERNAL_TOKEN>
 ```
 
-This endpoint:
-
-1. executes provider health checks;
-2. writes current state to `ops.provider_health`;
-3. appends health events to `ops.provider_health_events`;
-4. returns non-secret health snapshots.
-
-If `FULLMEDIA_INTERNAL_TOKEN` is not configured, the route cannot be authorized.
-
-This endpoint can later be called by a controlled Cron/worker after infrastructure is configured.
+This endpoint executes provider health checks, writes current state to `ops.provider_health`, appends health events and returns non-secret health snapshots.
 
 ---
 
-## 9. Cross-provider movie references
+## 9. Historical cross-provider compatibility
 
-Current adapters expose IDs such as:
+At milestone close, provider-prefixed refs such as `ophim:<slug>` and `kkphim:<slug>` were accepted and prefix-stripping allowed basic fallback when providers used the same slug.
 
-```text
-ophim:movie-slug
-kkphim:movie-slug
-```
-
-Before calling Provider Engine for detail/episodes/playback, the BFF strips known provider prefixes so a retryable OPhim failure may fall back to KKPhim when both sources use the same slug.
-
-This is an interim compatibility layer only.
-
-Final canonicalization must use:
-
-- `catalog.entities`
-- `catalog.provider_refs`
-
-for titles where provider slugs/IDs differ.
-
-Do not expand the prefix-strip approach into a permanent canonical identity system.
+That mechanism was explicitly interim. It has now been superseded by the canonical UUID/provider-ref implementation documented in `25_CANONICAL_MOVIE_RESOLVER_AND_CACHE.md`.
 
 ---
 
-## 10. Tests
+## 10. Tests at milestone close
 
-Provider tests live at:
+Provider fixture tests validated:
 
-`packages/providers/src/adapters/movies/movie-providers.test.ts`
-
-They validate:
-
-- OPhim list normalization;
-- OPhim detail normalization;
+- OPhim list/detail normalization;
 - episode parsing;
 - HLS playback mapping;
 - subtitle mapping;
-- embed alternative mapping;
-- KKPhim canonical DTO compatibility;
+- embed alternatives;
+- KKPhim contract compatibility;
 - retryable OPhim failure → KKPhim fallback;
 - fallback attempt metadata.
-
-BFF test:
-
-`apps/api/src/services/movie-service.test.ts`
-
-It validates known provider-prefix normalization.
 
 Fixtures are test-only and are not imported by production code.
 
@@ -313,47 +236,22 @@ Versions are pinned rather than using floating `latest` ranges.
 
 ---
 
-## 12. Required verification before production
+## 12. Verification result
 
-Run from repository root after dependencies are installed:
+Manual verification command chain:
 
 ```bash
-corepack enable
-pnpm install
 pnpm typecheck
 pnpm test
 pnpm build:api
 ```
 
-Database/staging verification:
+Result reported by the owner: **PASS**.
 
-```bash
-supabase db reset
-supabase db advisors
-```
-
-Then test against a staging Supabase project and real provider endpoints.
-
-Required manual/API checks:
-
-1. `GET /api/v1/health` returns 200.
-2. Movie list returns canonical objects.
-3. Search returns canonical objects.
-4. Detail resolves from primary provider.
-5. Episodes contain stable provider episode references.
-6. Playback returns HLS when upstream exposes `link_m3u8`.
-7. Provider fallback works when the primary returns retryable network/5xx/429 failure.
-8. No provider API secret appears in responses or logs.
-9. Internal health endpoint rejects missing/wrong token.
+The GitHub Actions workflow remains manual-only and must not gain automatic `push`/`pull_request` triggers unless the owner explicitly changes that policy.
 
 ---
 
-## 13. Next implementation milestone
+## 13. Successor milestone
 
-After this milestone passes local/staging gates:
-
-1. Implement canonical movie resolver backed by `catalog.entities` + `catalog.provider_refs` so fallback works even when slugs differ.
-2. Add server cache for catalog/detail responses with domain-specific TTL.
-3. Add Admin provider test/reload endpoints with role authorization and audit log.
-4. Add IPTV M3U + XMLTV adapters.
-5. Continue P3/P4 Movie catalog and Playback integration into web/mobile clients.
+The next milestone is `25_CANONICAL_MOVIE_RESOLVER_AND_CACHE.md`, which replaces provider-slug identity with canonical UUIDs, provider-ref discovery and domain TTL caching.
