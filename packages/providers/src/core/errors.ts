@@ -1,4 +1,5 @@
 export type ProviderErrorCode =
+  | 'INVALID_REQUEST'
   | 'TIMEOUT'
   | 'NETWORK'
   | 'RATE_LIMITED'
