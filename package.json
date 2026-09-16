@@ -9,11 +9,11 @@
   "scripts": {
     "dev:api": "pnpm --filter @fullmedia/api dev",
     "build:api": "pnpm --filter @fullmedia/api build",
-    "typecheck": "tsc -b --pretty false",
-    "typecheck:providers": "tsc -p packages/providers/tsconfig.json --noEmit",
-    "typecheck:api": "tsc -p apps/api/tsconfig.json --noEmit",
-    "test": "vitest run",
-    "test:providers": "vitest run packages/providers",
+    "typecheck": "pnpm --recursive --if-present typecheck",
+    "typecheck:providers": "pnpm --filter @fullmedia/providers typecheck",
+    "typecheck:api": "pnpm --filter @fullmedia/api typecheck",
+    "test": "pnpm --recursive --if-present test",
+    "test:providers": "pnpm --filter @fullmedia/providers test",
     "verify": "pnpm typecheck && pnpm test && pnpm build:api"
   },
   "devDependencies": {
