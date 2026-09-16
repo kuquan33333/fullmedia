@@ -1,6 +1,9 @@
 -- FULLMEDIA
 -- 013: Query indexes, search indexes and uniqueness guards.
 
+-- Resolve pg_trgm whether the extension is installed in public or extensions.
+set search_path = public, extensions;
+
 -- Canonical catalog.
 create index idx_entities_domain_type_active
     on catalog.entities (domain, entity_type, is_active);
@@ -19,10 +22,10 @@ create index idx_media_titles_updated_at
     on catalog.media_titles (updated_at desc);
 
 create index idx_media_titles_title_trgm
-    on catalog.media_titles using gin (normalized_title extensions.gin_trgm_ops);
+    on catalog.media_titles using gin (normalized_title gin_trgm_ops);
 
 create index idx_media_titles_original_title_trgm
-    on catalog.media_titles using gin (original_title extensions.gin_trgm_ops)
+    on catalog.media_titles using gin (original_title gin_trgm_ops)
     where original_title is not null;
 
 create unique index idx_media_episodes_identity_unique
@@ -161,3 +164,5 @@ create index idx_admin_audit_logs_recent
 
 create index idx_admin_audit_resource
     on ops.admin_audit_logs (resource_type, resource_id, created_at desc);
+
+reset search_path;
