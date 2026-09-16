@@ -13,7 +13,8 @@
     "typecheck:providers": "tsc -p packages/providers/tsconfig.json --noEmit",
     "typecheck:api": "tsc -p apps/api/tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:providers": "vitest run packages/providers"
+    "test:providers": "vitest run packages/providers",
+    "verify": "pnpm typecheck && pnpm test && pnpm build:api"
   },
   "devDependencies": {
     "typescript": "7.0.2",
