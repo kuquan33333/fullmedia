@@ -35,7 +35,7 @@ packages/
   api-client/
   auth/
   database/
-  providers/
+  providers/     Provider Engine interfaces + abstract core
   playback/
   analytics/
   config/
@@ -72,12 +72,17 @@ Supabase chịu trách nhiệm Auth, PostgreSQL, RLS, user profile, history/watc
 - `docs/19_ARCHITECTURE_DATA_FLOW.md` — sơ đồ kiến trúc tổng thể, Control Plane/Data Plane và data flow chi tiết cho Phim, TV, Bóng đá, YouTube, Auth, playback, cache và provider fallback.
 - `docs/20_DATABASE_ARCHITECTURE.md` — thiết kế PostgreSQL/Supabase production-ready: multi-schema, canonical entities, user data/RLS, Movies/TV/Football/YouTube, provider control-plane, health, ingestion, playback telemetry, indexes, migrations và ER/data flow.
 - `docs/21_DATABASE_MIGRATIONS.md` — mapping giữa thiết kế DB và 14 migration SQL thật, security model, verification gate và quy tắc migration tiếp theo.
+- `docs/22_PROVIDER_ENGINE_CODE_SCAFFOLD.md` — code khung Interface / Abstract Class, Registry, Selector, Health Store và fallback orchestration cho Provider Engine.
 
 ## Database migrations
 
 Schema executable nằm tại `supabase/migrations/` và hiện gồm 14 migration từ khởi tạo schema/extensions đến domain tables, Provider Engine control plane, user data, operations, triggers, RLS/grants, indexes và seed reference data.
 
 Xem `supabase/README.md` trước khi chạy local/staging. Production không được push trước khi migration reset và security/advisor checks pass.
+
+## Provider Engine scaffold
+
+Code khung nằm tại `packages/providers/` và gồm contract riêng cho Movies, TV, Football Data, Football Stream và Video/YouTube; adapter không được tự fallback sang provider khác. Registry/health/selection/fallback do Provider Engine quản lý tập trung.
 
 ## Definition of Done tổng quát
 
