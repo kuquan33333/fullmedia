@@ -67,6 +67,7 @@ Supabase chịu trách nhiệm Auth, PostgreSQL, RLS, user profile, history/watc
 - `docs/16_DEPLOYMENT_DEVOPS.md`
 - `docs/17_ROADMAP_P0_P12.md`
 - `docs/18_ACCEPTANCE_CHECKLIST.md`
+- `docs/19_ARCHITECTURE_DATA_FLOW.md` — sơ đồ kiến trúc tổng thể, Control Plane/Data Plane và data flow chi tiết cho Phim, TV, Bóng đá, YouTube, Auth, playback, cache và provider fallback.
 
 ## Definition of Done tổng quát
 
