@@ -13,7 +13,7 @@ export async function GET(request: Request, routeContext: RouteContext): Promise
   const context = requestContext(request);
   try {
     const { ref } = await routeContext.params;
-    const data = await movieService.episodes(decodeURIComponent(ref), context);
+    const data = await movieService.episodes(ref, context);
     return ok(data, { requestId: context.requestId });
   } catch (error) {
     return fail(error, context.requestId);
